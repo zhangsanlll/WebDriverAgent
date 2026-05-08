@@ -1,0 +1,31 @@
+name: Build WebDriverAgent IPA
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build WDA without signing
+        run: |
+          # 编译出未签名的 .app 文件
+          xcodebuild build-for-testing \
+            -scheme WebDriverAgentRunner \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath ./build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO
+          
+          # 将 .app 转换为 .ipa
+          mkdir Payload
+          cp -r ./build/Build/Products/Release-iphoneos/WebDriverAgentRunner-Runner.app Payload/
+          zip -r WebDriverAgent.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: WebDriverAgent-IPA
+          path: WebDriverAgent.ipa
